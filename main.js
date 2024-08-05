@@ -1,24 +1,78 @@
-import './style.css'
-import javascriptLogo from './javascript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.js'
+import { Game2048 } from './Game.js';
 
 document.querySelector('#app').innerHTML = `
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-      <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
-    </a>
-    <h1>Hello Vite!</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite logo to learn more
-    </p>
+  <div id="game-container">
+    <h1>2048</h1>
+    <div id="score">Score: <span id="score-value">0</span></div>
+    <div id="grid"></div>
+    <button id="new-game">New Game</button>
   </div>
-`
+`;
 
-setupCounter(document.querySelector('#counter'))
+const game = new Game2048();
+let gridElement = document.getElementById('grid');
+const scoreElement = document.getElementById('score-value');
+const newGameButton = document.getElementById('new-game');
+
+function updateUI() {
+  const newGrid = document.createElement('div');
+  newGrid.id = 'grid';
+
+  for (let i = 0; i < game.size; i++) {
+    for (let j = 0; j < game.size; j++) {
+      const tileValue = game.grid[i][j];
+      const tile = document.createElement('div');
+      tile.className = `tile${tileValue !== 0 ? ` tile-${tileValue}` : ''}`;
+      if (tileValue !== 0) {
+        tile.textContent = tileValue;
+        tile.style.setProperty('--x', j);
+        tile.style.setProperty('--y', i);
+
+        if (game.newTiles.some(newTile => newTile.x === i && newTile.y === j)) {
+          tile.classList.add('tile-new');
+        } else if (game.mergedTiles.some(mergedTile => mergedTile.x === i && mergedTile.y === j)) {
+          tile.classList.add('tile-merged');
+        }
+      }
+      newGrid.appendChild(tile);
+    }
+  }
+
+  gridElement.replaceWith(newGrid);
+  gridElement = newGrid;
+  scoreElement.textContent = game.score;
+}
+
+function handleKeyPress(event) {
+  let moved = false;
+  switch (event.key) {
+    case 'ArrowUp':
+      moved = game.move('up');
+      break;
+    case 'ArrowDown':
+      moved = game.move('down');
+      break;
+    case 'ArrowLeft':
+      moved = game.move('left');
+      break;
+    case 'ArrowRight':
+      moved = game.move('right');
+      break;
+  }
+  if (moved) {
+    updateUI();
+    if (game.isGameOver()) {
+      alert('Game Over!');
+    }
+  }
+}
+
+function startNewGame() {
+  game.reset();
+  updateUI();
+}
+
+document.addEventListener('keydown', handleKeyPress);
+newGameButton.addEventListener('click', startNewGame);
+
+updateUI();
